@@ -1,3 +1,6 @@
+import argparse
+import json
+import os
 from typing import List
 
 from flair.data_fetcher import NLPTaskDataFetcher, NLPTask
@@ -5,51 +8,75 @@ from flair.data import TaggedCorpus
 from flair.embeddings import TokenEmbeddings, WordEmbeddings, StackedEmbeddings, CharLMEmbeddings, CharacterEmbeddings
 from flair.training_utils import EvaluationMetric
 from flair.visual.training_curves import Plotter
-
-# 1. get the corpus
-corpus: TaggedCorpus = NLPTaskDataFetcher.load_corpus(NLPTask.UD_ENGLISH)
-print(corpus)
-
-# 2. what tag do we want to predict?
-tag_type = 'pos'
-
-# 3. make the tag dictionary from the corpus
-tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
-print(tag_dictionary.idx2item)
-
-# initialize embeddings
-embedding_types: List[TokenEmbeddings] = [
-
-    WordEmbeddings('glove'),
-
-    # comment in this line to use character embeddings
-    # CharacterEmbeddings(),
-
-    # comment in these lines to use contextual string embeddings
-    #
-    # CharLMEmbeddings('news-forward'),
-    #
-    # CharLMEmbeddings('news-backward'),
-]
-
-embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
-
-# initialize sequence tagger
+from flair.trainers import ModelTrainer
 from flair.models import SequenceTagger
 
-tagger: SequenceTagger = SequenceTagger(hidden_size=256,
-                                        embeddings=embeddings,
-                                        tag_dictionary=tag_dictionary,
-                                        tag_type=tag_type,
-                                        use_crf=True)
 
-# initialize trainer
-from flair.trainers import ModelTrainer
-trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+def train(params):
+    # 1. get the corpus
+    corpus = NLPTaskDataFetcher.load_corpus(NLPTask[params["task"]], params['filenames'],
+                                           tag_to_biloes=params["convert_tag"])
+    print(corpus)
 
-trainer.train('resources/taggers/example-ner', EvaluationMetric.MICRO_F1_SCORE, learning_rate=0.1, mini_batch_size=32,
-              max_epochs=20, test_mode=True)
+    # 2. what tag do we want to predict?
+    tag_type = 'ner'
 
-plotter = Plotter()
-plotter.plot_training_curves('resources/taggers/example-ner/loss.tsv')
-plotter.plot_weights('resources/taggers/example-ner/weights.txt')
+    # 3. make the tag dictionary from the corpus
+    tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
+    print(tag_dictionary.idx2item)
+
+    embedding_types = []
+
+    if params["word_embeddings"] is True:
+        embedding_types.append(WordEmbeddings(params["embeddings_name"]))
+
+    if params["char_embeddings"] is True:
+        # comment in this line to use character embeddings
+        embedding_types.append(CharacterEmbeddings())
+
+    if params["charlm_embeddings"] is True:
+        embedding_types.append(CharLMEmbeddings('news-forward'))
+        embedding_types.append(CharLMEmbeddings('news-backward'))
+
+    embeddings = StackedEmbeddings(embeddings=embedding_types)
+
+    # initialize sequence tagger
+
+    tagger = SequenceTagger(hidden_size=params["hidden_size"],
+                            embeddings=embeddings,
+                            tag_dictionary=tag_dictionary,
+                            tag_type=tag_type,
+                            use_rnn=params["use_rnn"],
+                            rnn_layers=params["rnn_layers"],
+                            use_crf=params["use_crf"])
+
+    base_path = os.path.join(params["model_dir"], params["model_tag"])
+    os.makedirs(base_path, exist_ok=True)
+
+    with open(os.path.join(base_path, 'config.json'), "w") as cfg:
+        json.dump(params, cfg)
+    # initialize trainer
+
+    trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+
+    trainer.train(base_path, EvaluationMetric.MICRO_F1_SCORE, mini_batch_size=params["mini_batch_size"],
+                  max_epochs=params["max_epochs"], save_final_model=params["save_model"],
+                  train_with_dev=params["train_with_dev"], anneal_factor=params["anneal_factor"],
+                  embeddings_in_memory=False, test_mode=False)
+
+    plotter = Plotter()
+    plotter.plot_training_curves(os.path.join(base_path, "loss.txt"))
+    plotter.plot_weights(os.path.join(base_path, 'weights.txt'))
+
+
+if __name__ == "__main__":
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("--config", default="config.json")
+
+    args = arg_parser.parse_args()
+
+    with open(args.config) as cfg:
+        params = json.load(cfg)
+
+    print(params)
+    train(params)

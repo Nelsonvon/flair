@@ -20,7 +20,7 @@ import requests
 logger = logging.getLogger('flair')
 
 
-CACHE_ROOT = os.path.expanduser(os.path.join('~', '.flair'))
+CACHE_ROOT = os.path.join('/work/smt2/tokarchuk', '.flair')
 
 
 def load_big_file(f):

@@ -94,6 +94,8 @@ class NLPTask(Enum):
     TREC_6 = 'trec-6'
     TREC_50 = 'trec-50'
 
+    TAC = 'tac'
+
 
 class NLPTaskDataFetcher:
 
@@ -102,7 +104,7 @@ class NLPTaskDataFetcher:
         return MultiCorpus([NLPTaskDataFetcher.load_corpus(task, base_path) for task in tasks])
 
     @staticmethod
-    def load_corpus(task: Union[NLPTask, str], base_path: [str, Path] = None) -> TaggedCorpus:
+    def load_corpus(task: Union[NLPTask, str], base_path: [str, Path] = None, files: list = None) -> TaggedCorpus:
         """
         Helper function to fetch a TaggedCorpus for a specific NLPTask. For this to work you need to first download
         and put into the appropriate folder structure the corresponding NLP task data. The tutorials on
@@ -169,6 +171,16 @@ class NLPTaskDataFetcher:
             return NLPTaskDataFetcher.load_column_corpus(data_folder,
                                                          columns,
                                                          tag_to_biloes='ner')
+        if task == NLPTask.TAC:
+            columns = {0: 'text', 1: 'ner'}  # 1: 'pos', 2: 'np', 3: 'ner'}
+
+            return NLPTaskDataFetcher.load_column_corpus(data_folder,
+                                                          columns,
+                                                          train_file=files["train"],
+                                                          test_file=files["test"],
+                                                          dev_file=files["dev"],
+                                                          tag_to_biloes='ner'
+                                                          )
 
         # the GERMEVAL task only has two columns: text and ner
         if task == NLPTask.GERMEVAL.value:
@@ -224,42 +236,48 @@ class NLPTaskDataFetcher:
         if type(data_folder) == str:
             data_folder: Path = Path(data_folder)
 
-        if train_file is not None:
-            train_file = data_folder / train_file
-        if test_file is not None:
-            test_file = data_folder / test_file
-        if dev_file is not None:
-            dev_file = data_folder / dev_file
+        if type(train_file) == list:
+            sentences_train: List[Sentence] = []
+            for tf in train_file:
+                sentences_train.extend(NLPTaskDataFetcher.read_column_data(
+                    tf, column_format))
+        else:
+            if train_file is not None:
+                train_file = data_folder / train_file
+            if test_file is not None:
+                test_file = data_folder / test_file
+            if dev_file is not None:
+                dev_file = data_folder / dev_file
 
-        # automatically identify train / test / dev files
-        if train_file is None:
-            for file in data_folder.iterdir():
-                file_name = file.name
-                if file_name.endswith('.gz'): continue
-                if 'train' in file_name and not '54019' in file_name:
-                    train_file = file
-                if 'dev' in file_name:
-                    dev_file = file
-                if 'testa' in file_name:
-                    dev_file = file
-                if 'testb' in file_name:
-                    test_file = file
-
-            # if no test file is found, take any file with 'test' in name
-            if test_file is None:
+            # automatically identify train / test / dev files
+            if train_file is None:
                 for file in data_folder.iterdir():
                     file_name = file.name
                     if file_name.endswith('.gz'): continue
-                    if 'test' in file_name:
+                    if 'train' in file_name and not '54019' in file_name:
+                        train_file = file
+                    if 'dev' in file_name:
+                        dev_file = file
+                    if 'testa' in file_name:
+                        dev_file = file
+                    if 'testb' in file_name:
                         test_file = file
 
-        log.info("Reading data from {}".format(data_folder))
-        log.info("Train: {}".format(train_file))
-        log.info("Dev: {}".format(dev_file))
-        log.info("Test: {}".format(test_file))
+                # if no test file is found, take any file with 'test' in name
+                if test_file is None:
+                    for file in data_folder.iterdir():
+                        file_name = file.name
+                        if file_name.endswith('.gz'): continue
+                        if 'test' in file_name:
+                            test_file = file
+
+            log.info("Reading data from {}".format(data_folder))
+            log.info("Train: {}".format(train_file))
+            log.info("Dev: {}".format(dev_file))
+            log.info("Test: {}".format(test_file))
 
         # get train and test data
-        sentences_train: List[Sentence] = NLPTaskDataFetcher.read_column_data(train_file, column_format)
+            sentences_train: List[Sentence] = NLPTaskDataFetcher.read_column_data(train_file, column_format)
 
         # read in test file if exists, otherwise sample 10% of train data as test dataset
         if test_file is not None:
