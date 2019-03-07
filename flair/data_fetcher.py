@@ -130,7 +130,7 @@ class NLPTaskDataFetcher:
         task = task.value if type(task) is NLPTask else task
 
         data_folder = base_path / task.lower()
-
+        print(task)
         # the CoNLL 2000 task on chunking has three columns: text, pos and np (chunk)
         if task == NLPTask.CONLL_2000.value:
             columns = {0: 'text', 1: 'pos', 2: 'np'}
@@ -171,7 +171,8 @@ class NLPTaskDataFetcher:
             return NLPTaskDataFetcher.load_column_corpus(data_folder,
                                                          columns,
                                                          tag_to_biloes='ner')
-        if task == NLPTask.TAC:
+        if task == NLPTask.TAC.value:
+            print("fetch tac data")
             columns = {0: 'text', 1: 'ner'}  # 1: 'pos', 2: 'np', 3: 'ner'}
 
             return NLPTaskDataFetcher.load_column_corpus(data_folder,

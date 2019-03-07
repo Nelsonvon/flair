@@ -14,8 +14,8 @@ from flair.models import SequenceTagger
 
 def train(params):
     # 1. get the corpus
-    corpus = NLPTaskDataFetcher.load_corpus(NLPTask[params["task"]], params['filenames'],
-                                           tag_to_biloes=params["convert_tag"])
+    print(NLPTask[params["task"]])
+    corpus = NLPTaskDataFetcher.load_corpus(task = NLPTask[params["task"]], files = params['filenames'])
     print(corpus)
 
     # 2. what tag do we want to predict?
@@ -62,10 +62,10 @@ def train(params):
     trainer.train(base_path, EvaluationMetric.MICRO_F1_SCORE, mini_batch_size=params["mini_batch_size"],
                   max_epochs=params["max_epochs"], save_final_model=params["save_model"],
                   train_with_dev=params["train_with_dev"], anneal_factor=params["anneal_factor"],
-                  embeddings_in_memory=False, test_mode=False)
+                  embeddings_in_memory=params["inmem"], test_mode=False)
 
     plotter = Plotter()
-    plotter.plot_training_curves(os.path.join(base_path, "loss.txt"))
+    plotter.plot_training_curves(os.path.join(base_path, "loss.tsv"))
     plotter.plot_weights(os.path.join(base_path, 'weights.txt'))
 
 
