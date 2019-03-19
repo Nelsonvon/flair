@@ -16,6 +16,7 @@ def evaluate(model, test_set, dir=None, mt = None):
 
     tagger = SequenceTagger.load_from_file(model)
 
+    print("Testing using best model ...")
     metric, eval_loss = ModelTrainer.evaluate(tagger, sentences_test, eval_mini_batch_size=32,
                           embeddings_in_memory=True, out_path=Path(os.path.join(dir, "predicted_{}.conll".format(mt))))
     print(metric)
