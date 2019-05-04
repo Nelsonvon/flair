@@ -52,6 +52,81 @@ def read_conll_format(filenames):
     print(len(sentences))
     return sentences, tags, max_len
 
+def get_grad(model: SequenceTagger, sentences: List[Sentence], grad_layer: str, sort=True):
+    model.zero_grad()
+
+    model.embeddings.embed(sentences)
+
+    # if sorting is enabled, sort sentences by number of tokens
+    if sort:
+        sentences.sort(key=lambda x: len(x), reverse=True)
+
+    lengths: List[int] = [len(sentence.tokens) for sentence in sentences]
+    tag_list: List = []
+    longest_token_sequence_in_batch: int = lengths[0]
+
+    # initialize zero-padded word embeddings tensor
+    sentence_tensor = torch.zeros([len(sentences),
+                                   longest_token_sequence_in_batch,
+                                   model.embeddings.embedding_length],
+                                  dtype=torch.float, device=flair.device)
+    """
+    I don't know what happened that
+    """
+    for s_id, sentence in enumerate(sentences):
+        # fill values with word embeddings
+        sentence_tensor[s_id][:len(sentence)] = torch.cat([token.get_embedding().unsqueeze(0) for token in sentence], 0)
+
+        # get the tags in this sentence
+        tag_idx: List[int] = [model.tag_dictionary.get_idx_for_item(token.get_tag(model.tag_type).value)
+                              for token in sentence]
+        # add tags as tensor
+        tag = torch.LongTensor(tag_idx).to(flair.device)
+        tag_list.append(tag)
+
+    sentence_tensor = sentence_tensor.transpose_(0, 1)
+
+    # --------------------------------------------------------------------
+    # FF PART
+    # --------------------------------------------------------------------
+    if model.use_dropout > 0.0:
+        sentence_tensor = model.dropout(sentence_tensor)
+    if model.use_word_dropout > 0.0:
+        sentence_tensor = model.word_dropout(sentence_tensor)
+    if model.use_locked_dropout > 0.0:
+        sentence_tensor = model.locked_dropout(sentence_tensor)
+
+    if model.relearn_embeddings:
+        sentence_tensor = model.embedding2nn(sentence_tensor)
+
+    if model.use_rnn:
+        packed = torch.nn.utils.rnn.pack_padded_sequence(sentence_tensor, lengths)
+
+        rnn_output, hidden = model.rnn(packed)
+
+        # crf_tensor = torch.zeros(model.embeddings.embedding_length,requires_grad=True)
+        # crf_tensor, output_lengths = torch.nn.utils.rnn.pad_packed_sequence(rnn_output)
+
+        sentence_tensor, output_lengths = torch.nn.utils.rnn.pad_packed_sequence(rnn_output)
+
+        if model.use_dropout > 0.0:
+            sentence_tensor = model.dropout(sentence_tensor)
+        # word dropout only before LSTM - TODO: more experimentation needed
+        # if model.use_word_dropout > 0.0:
+        #     sentence_tensor = model.word_dropout(sentence_tensor)
+        if model.use_locked_dropout > 0.0:
+            sentence_tensor = model.locked_dropout(sentence_tensor)
+        sentence_tensor.retain_grad()
+    # sentence_tensor.retain_grad()
+    features = model.linear(sentence_tensor)
+    # features.retain_grad()
+
+    loss = model._calculate_loss(features.transpose_(0, 1), lengths, tag_list)
+    loss.backward()
+
+    return [p.grad for p in list(model.linear.parameters())]
+    # return features.grad.data
+    # return  sentence_tensor.grad.data
 
 
 class Inconsist_Analyzor:
@@ -173,7 +248,7 @@ class Inconsist_Analyzor:
         for id in self.sent_sim:
             if id not in grad_dict:
                 sent = self.sent_dict[id]
-                grad: List[torch.Tensor] = self.model.get_grad(sentences=[sent], grad_layer='output')
+                grad: List[torch.Tensor] = get_grad(self.model,sentences=[sent], grad_layer='output')
                 grad = torch.cat([grad[0].view(1, -1), grad[1].view(1, -1)], 1)
                 #grad: torch.Tensor = self.model.get_grad(sentences=[sent], grad_layer='output')
                 #print(grad.size())

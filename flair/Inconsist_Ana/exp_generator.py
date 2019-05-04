@@ -127,11 +127,11 @@ for datasets in to_change:
 
     job_name = "{}".format(model_tag)
     if new_config['embed_type'] == 'bert':
-        cluster_command = "echo \"/u/qfeng/Project/auto_dataset_foundation/py37/bin/python3 /u/qfeng/Project/auto_dataset_foundation/flair/Inconsist_Ana/inconsist_analyzor.py --config {}\" " \
+        cluster_command = "echo \"/u/qfeng/Project/work_37/bin/python3 /u/qfeng/Project/auto_dataset_foundation/flair/flair/Inconsist_Ana/inconsist_analyzor.py --config {}\" " \
                           "| qsub -o /work/smt2/qfeng/Project/auto_dataset_foundation/logs/flair -e /work/smt2/qfeng/Project/auto_dataset_foundation/logs/errors -N {} -l gpu=1 -l h_vmem=70G -l qname=*1080* -l h_rt=60:00:00 ".format(
             config_name, job_name)
     else:
-        cluster_command = "echo \"/u/qfeng/Project/auto_dataset_foundation/py37/bin/python3 /u/qfeng/Project/auto_dataset_foundation/flair/Inconsist_Ana/inconsist_analyzor.py --config {}\" " \
+        cluster_command = "echo \"/u/qfeng/Project/work_37/bin/python3 /u/qfeng/Project/auto_dataset_foundation/flair/flair/Inconsist_Ana/inconsist_analyzor.py --config {}\" " \
                       "| qsub -o /work/smt2/qfeng/Project/auto_dataset_foundation/logs/flair -e /work/smt2/qfeng/Project/auto_dataset_foundation/logs/errors -N {} -l gpu=1 -l h_vmem=40G -l qname=*1080* -l h_rt=60:00:00 ".format(
         config_name, job_name)
 
