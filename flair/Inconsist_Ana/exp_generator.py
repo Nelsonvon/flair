@@ -89,21 +89,25 @@ to_change = [
 
     {
         "save_emb": True,
+        "run_emb": True,
         "run_sent_sim": True,
         "sent_sim_th": 0.8,
         "Description": "get sentences similarity sent_th = 0.8"
     },
     {
+        "run_emb": True,
         "run_sent_sim": True,
         "sent_sim_th": 0.7,
         "Description": "get sentences similarity sent_th = 0.7"
     },
     {
+        "run_emb": True,
         "run_sent_sim": True,
         "sent_sim_th": 0.6,
         "Description": "get sentences similarity sent_th = 0.6"
     },
     {
+        "run_emb": True,
         "run_sent_sim": True,
         "sent_sim_th": 0.5,
         "Description": "get sentences similarity sent_th = 0.5"

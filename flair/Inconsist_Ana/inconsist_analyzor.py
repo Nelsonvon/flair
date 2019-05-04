@@ -338,8 +338,9 @@ class Inconsist_Analyzor:
                 if (is_inconsistent(self.sent_sim[id], self.grad_sim[id], self.params['filter_score'])):
                     self.incon_id['train'].append(id)
         stat['del_sents'] = {'train': len(self.incon_id['train'])}
-        print("finish resampler: {}".format(datetime.datetime.now().strftime("%d_%H_%M")))
-        return self.incon_id, stat
+        print("finish resampler: {}, deleted {} sentences".format(datetime.datetime.now().strftime("%d_%H_%M"),
+                                                                  str(len(self.incon_id['train']))))
+        return stat
 
     def visualize_sent_grad(self):
         pass
