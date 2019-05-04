@@ -15,6 +15,7 @@ import datetime
 import multiprocessing
 import re
 import mimesis
+from flair import device
 
 """
 27.04:
@@ -65,11 +66,16 @@ def get_grad(model: SequenceTagger, sentences: List[Sentence], grad_layer: str, 
     tag_list: List = []
     longest_token_sequence_in_batch: int = lengths[0]
 
+    if torch.cuda.is_available():
+        device = torch.device('cuda:0')
+    else:
+        device = torch.device('cpu')
+
     # initialize zero-padded word embeddings tensor
     sentence_tensor = torch.zeros([len(sentences),
                                    longest_token_sequence_in_batch,
                                    model.embeddings.embedding_length],
-                                  dtype=torch.float, device=flair.device)
+                                  dtype=torch.float, device=device)
     """
     I don't know what happened that
     """
@@ -81,7 +87,7 @@ def get_grad(model: SequenceTagger, sentences: List[Sentence], grad_layer: str, 
         tag_idx: List[int] = [model.tag_dictionary.get_idx_for_item(token.get_tag(model.tag_type).value)
                               for token in sentence]
         # add tags as tensor
-        tag = torch.LongTensor(tag_idx).to(flair.device)
+        tag = torch.LongTensor(tag_idx).to(device)
         tag_list.append(tag)
 
     sentence_tensor = sentence_tensor.transpose_(0, 1)
