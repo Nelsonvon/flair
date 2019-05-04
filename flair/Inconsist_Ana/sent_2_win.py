@@ -20,7 +20,7 @@ def get_sents(filename)->List[Sentence]:
 def save_wins(sents: List[Sentence], filename:str, win_size):
     with open(filename,'w+') as fout:
         for sent in sents:
-            print(sent.to_plain_string())
+            #print(sent.to_plain_string())
             span_start_pos = 0
             span_length = 0
             previous_tag_value: str = 'O'
@@ -71,14 +71,14 @@ def save_wins(sents: List[Sentence], filename:str, win_size):
                                 tag = re.sub("E-", "I-", tag)
                         fout.write("{}\t{}\n".format(text, tag))
                     fout.write(('\n'))
-                    print("print win:[{}-{}]".format(str(span_start_pos-win_size),str(span_start_pos+span_length+win_size)))
+                    #print("print win:[{}-{}]".format(str(span_start_pos-win_size),str(span_start_pos+span_length+win_size)))
                     span_length = 0
                 if in_span:
                     span_length +=1
                 if starts_new_span:
                     span_start_pos = current_loc
                 previous_tag_value = tag_value
-                print("current_pos:{}, start_pos: {}, length:{}".format(str(current_loc),str(span_start_pos),str(span_length)))
+                #print("current_pos:{}, start_pos: {}, length:{}".format(str(current_loc),str(span_start_pos),str(span_length)))
 
             if (not in_span or starts_new_span) and (span_length!=0):
                 # not in a span but the buffer is not empty: just went through a span and should output it.
@@ -98,9 +98,13 @@ def save_wins(sents: List[Sentence], filename:str, win_size):
                             tag = re.sub("E-", "I-", tag)
                     fout.write("{}\t{}\n".format(text, tag))
                 fout.write(('\n'))
-                print("print win:[{}-{}]".format(str(span_start_pos - win_size),
-                                                 str(span_start_pos + span_length + win_size + 1)))
+                #print("print win:[{}-{}]".format(str(span_start_pos - win_size),
+                                                 #str(span_start_pos + span_length + win_size + 1)))
     return
 
-sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train_smudge.txt')
-save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train_smudge_win.txt', 3)
+sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train.txt')
+save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train_win.txt', 3)
+sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/valid.txt')
+save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/valid_win.txt', 3)
+sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/test.txt')
+save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/test_win.txt', 3)
