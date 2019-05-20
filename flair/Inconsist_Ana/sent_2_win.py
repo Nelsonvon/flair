@@ -103,8 +103,8 @@ def save_wins(sents: List[Sentence], filename:str, win_size):
     return
 
 sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train.txt')
-save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train_win.txt', 3)
+save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/train_win_fixed.txt', 3)
 sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/valid.txt')
-save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/valid_win.txt', 3)
+save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/valid_win_fixed.txt', 3)
 sents_temp = get_sents('/home/nelson/Data/auto_database_foundation/datasets/CoNLL/test.txt')
-save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/test_win.txt', 3)
+save_wins(sents_temp,'/home/nelson/Data/auto_database_foundation/datasets/CoNLL/test_win_fixed.txt', 3)

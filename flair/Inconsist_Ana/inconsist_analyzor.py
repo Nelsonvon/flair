@@ -27,6 +27,10 @@ improve naming of return
 30.04:
 Drop test/dev set from filtering
 """
+"""
+09.05:
+switch to cpu computation because of bugs when using CUDNN.
+"""
 
 def read_conll_format(filenames):
     sentences = []
@@ -145,10 +149,11 @@ class Inconsist_Analyzor:
         self.grad_sim: Dict[int,Dict[int,float]] = {}
         self.params = params
 
-        if torch.cuda.is_available():
-            self.device = torch.device('cuda:0')
-        else:
-            self.device = torch.device('cpu')
+        self.device = torch.device('cpu')
+	#if torch.cuda.is_available():
+        #    self.device = torch.device('cuda:0')
+        #else:
+        #    self.device = torch.device('cpu')
         self.cs: CosineSimilarity = CosineSimilarity(dim=1, eps=1e-6)
         return
 
@@ -268,6 +273,7 @@ class Inconsist_Analyzor:
                     #print("find suitable pair")
                     if new_id not in grad_dict:
                         sent = self.sent_dict[new_id]
+                        self.model.train()
                         grad: List[torch.Tensor] = self.model.get_grad(sentences=[sent], grad_layer='output')
                         grad = torch.cat([grad[0].view(1, -1), grad[1].view(1, -1)], 1)
                         #grad: torch.Tensor = self.model.get_grad(sentences=[sent], grad_layer='output')
@@ -433,6 +439,15 @@ class Inconsist_Analyzor:
             self.save_downsample()
 
         return
+    
+    def conv_sent_2_win(self):
+        pass
+    
+    def save_downsample_win(self):
+        pass
+    
+    def process_win(self):
+        pass
 
 
 if __name__ == "__main__":
